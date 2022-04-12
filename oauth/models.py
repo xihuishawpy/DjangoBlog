@@ -57,7 +57,7 @@ class OAuthConfig(models.Model):
         if OAuthConfig.objects.filter(
                 type=self.type).exclude(
             id=self.id).count():
-            raise ValidationError(_(self.type + '已经存在'))
+            raise ValidationError(_(f'{self.type}已经存在'))
 
     def __str__(self):
         return self.type

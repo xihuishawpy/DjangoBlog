@@ -36,8 +36,11 @@ class OAuthUserAdmin(admin.ModelAdmin):
             info = (obj.author._meta.app_label, obj.author._meta.model_name)
             link = reverse('admin:%s_%s_change' % info, args=(obj.author.id,))
             return format_html(
-                u'<a href="%s">%s</a>' %
-                (link, obj.author.nickname if obj.author.nickname else obj.author.email))
+                (
+                    u'<a href="%s">%s</a>'
+                    % (link, obj.author.nickname or obj.author.email)
+                )
+            )
 
     def show_user_image(self, obj):
         img = obj.picture

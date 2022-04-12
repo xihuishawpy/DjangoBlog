@@ -43,20 +43,14 @@ def cache_decorator(expiration=3 * 60):
             value = cache.get(key)
             if value is not None:
                 # logger.info('cache_decorator get cache:%s key:%s' % (func.__name__, key))
-                if str(value) == '__default_cache_value__':
-                    return None
-                else:
-                    return value
+                return None if str(value) == '__default_cache_value__' else value
+            logger.info(f'cache_decorator set cache:{func.__name__} key:{key}')
+            value = func(*args, **kwargs)
+            if value is None:
+                cache.set(key, '__default_cache_value__', expiration)
             else:
-                logger.info(
-                    'cache_decorator set cache:%s key:%s' %
-                    (func.__name__, key))
-                value = func(*args, **kwargs)
-                if value is None:
-                    cache.set(key, '__default_cache_value__', expiration)
-                else:
-                    cache.set(key, value, expiration)
-                return value
+                cache.set(key, value, expiration)
+            return value
 
         return news
 
@@ -79,8 +73,7 @@ def expire_view_cache(path, servername, serverport, key_prefix=None):
     request.META = {'SERVER_NAME': servername, 'SERVER_PORT': serverport}
     request.path = path
 
-    key = get_cache_key(request, key_prefix=key_prefix, cache=cache)
-    if key:
+    if key := get_cache_key(request, key_prefix=key_prefix, cache=cache):
         logger.info('expire_view_cache:get key:{path}'.format(path=path))
         if cache.get(key):
             cache.delete(key)
@@ -90,8 +83,7 @@ def expire_view_cache(path, servername, serverport, key_prefix=None):
 
 @cache_decorator()
 def get_current_site():
-    site = Site.objects.get_current()
-    return site
+    return Site.objects.get_current()
 
 
 class CommonMarkdown:
@@ -137,16 +129,14 @@ def generate_code() -> str:
 
 def parse_dict_to_url(dict):
     from urllib.parse import quote
-    url = '&'.join(['{}={}'.format(quote(k, safe='/'), quote(v, safe='/'))
-                    for k, v in dict.items()])
-    return url
+    return '&'.join(
+        [f"{quote(k, safe='/')}={quote(v, safe='/')}" for k, v in dict.items()]
+    )
 
 
 def get_blog_setting():
     value = cache.get('get_blog_setting')
-    if value:
-        return value
-    else:
+    if not value:
         from blog.models import BlogSettings
         if not BlogSettings.objects.count():
             setting = BlogSettings()
@@ -166,7 +156,7 @@ def get_blog_setting():
         value = BlogSettings.objects.first()
         logger.info('set cache get_blog_setting')
         cache.set('get_blog_setting', value)
-        return value
+    return value
 
 
 def save_user_avatar(url):
@@ -179,8 +169,7 @@ def save_user_avatar(url):
     logger.info(url)
 
     try:
-        imgname = url.split('/')[-1]
-        if imgname:
+        if imgname := url.split('/')[-1]:
             path = r'{basedir}/avatar/{img}'.format(
                 basedir=setting.resource_path, img=imgname)
             if os.path.exists(path):
@@ -196,10 +185,10 @@ def save_user_avatar(url):
             isimage = len([i for i in imgextensions if url.endswith(i)]) > 0
             ext = os.path.splitext(url)[1] if isimage else '.jpg'
             savefilename = str(uuid.uuid4().hex) + ext
-            logger.info('保存用户头像:' + basepath + savefilename)
+            logger.info(f'保存用户头像:{basepath}{savefilename}')
             with open(basepath + savefilename, 'wb+') as file:
                 file.write(rsp.content)
-            return 'https://resource.lylinux.net/avatar/' + savefilename
+            return f'https://resource.lylinux.net/avatar/{savefilename}'
     except Exception as e:
         logger.error(e)
         return url
@@ -207,9 +196,9 @@ def save_user_avatar(url):
 
 def delete_sidebar_cache():
     from blog.models import LinkShowType
-    keys = ["sidebar" + x for x in LinkShowType.values]
+    keys = [f"sidebar{x}" for x in LinkShowType.values]
     for k in keys:
-        logger.info('delete sidebar key:' + k)
+        logger.info(f'delete sidebar key:{k}')
         cache.delete(k)
 
 

@@ -87,10 +87,10 @@ class WBOauthManager(BaseOauthManager):
         params = {
             'client_id': self.client_id,
             'response_type': 'code',
-            'redirect_uri': self.callback_url + '&next_url=' + nexturl
+            'redirect_uri': f'{self.callback_url}&next_url={nexturl}',
         }
-        url = self.AUTH_URL + "?" + urllib.parse.urlencode(params)
-        return url
+
+        return f"{self.AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     def get_access_token_by_code(self, code):
 
@@ -104,12 +104,11 @@ class WBOauthManager(BaseOauthManager):
         rsp = self.do_post(self.TOKEN_URL, params)
 
         obj = json.loads(rsp)
-        if 'access_token' in obj:
-            self.access_token = str(obj['access_token'])
-            self.openid = str(obj['uid'])
-            return self.get_oauth_userinfo()
-        else:
+        if 'access_token' not in obj:
             raise OAuthAccessTokenException(rsp)
+        self.access_token = str(obj['access_token'])
+        self.openid = str(obj['uid'])
+        return self.get_oauth_userinfo()
 
     def get_oauth_userinfo(self):
         if not self.is_authorized:
@@ -133,7 +132,7 @@ class WBOauthManager(BaseOauthManager):
             return user
         except Exception as e:
             logger.error(e)
-            logger.error('weibo oauth error.rsp:' + rsp)
+            logger.error(f'weibo oauth error.rsp:{rsp}')
             return None
 
 
@@ -161,9 +160,7 @@ class GoogleOauthManager(BaseOauthManager):
             'redirect_uri': self.callback_url,
             'scope': 'openid email',
         }
-        # url = self.AUTH_URL + "?" + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-        url = self.AUTH_URL + "?" + urllib.parse.urlencode(params)
-        return url
+        return f"{self.AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     def get_access_token_by_code(self, code):
         params = {
@@ -178,13 +175,12 @@ class GoogleOauthManager(BaseOauthManager):
 
         obj = json.loads(rsp)
 
-        if 'access_token' in obj:
-            self.access_token = str(obj['access_token'])
-            self.openid = str(obj['id_token'])
-            logger.info(self.ICON_NAME + ' oauth ' + rsp)
-            return self.access_token
-        else:
+        if 'access_token' not in obj:
             raise OAuthAccessTokenException(rsp)
+        self.access_token = str(obj['access_token'])
+        self.openid = str(obj['id_token'])
+        logger.info(f'{self.ICON_NAME} oauth {rsp}')
+        return self.access_token
 
     def get_oauth_userinfo(self):
         if not self.is_authorized:
@@ -208,7 +204,7 @@ class GoogleOauthManager(BaseOauthManager):
             return user
         except Exception as e:
             logger.error(e)
-            logger.error('google oauth error.rsp:' + rsp)
+            logger.error(f'google oauth error.rsp:{rsp}')
             return None
 
 
@@ -233,12 +229,11 @@ class GitHubOauthManager(BaseOauthManager):
         params = {
             'client_id': self.client_id,
             'response_type': 'code',
-            'redirect_uri': self.callback_url + '&next_url=' + nexturl,
-            'scope': 'user'
+            'redirect_uri': f'{self.callback_url}&next_url={nexturl}',
+            'scope': 'user',
         }
-        # url = self.AUTH_URL + "?" + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-        url = self.AUTH_URL + "?" + urllib.parse.urlencode(params)
-        return url
+
+        return f"{self.AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     def get_access_token_by_code(self, code):
         params = {
@@ -253,17 +248,19 @@ class GitHubOauthManager(BaseOauthManager):
 
         from urllib import parse
         r = parse.parse_qs(rsp)
-        if 'access_token' in r:
-            self.access_token = (r['access_token'][0])
-            return self.access_token
-        else:
+        if 'access_token' not in r:
             raise OAuthAccessTokenException(rsp)
+        self.access_token = (r['access_token'][0])
+        return self.access_token
 
     def get_oauth_userinfo(self):
 
-        rsp = self.do_get(self.API_URL, params={}, headers={
-            "Authorization": "token " + self.access_token
-        })
+        rsp = self.do_get(
+            self.API_URL,
+            params={},
+            headers={"Authorization": f"token {self.access_token}"},
+        )
+
         try:
             datas = json.loads(rsp)
             user = OAuthUser()
@@ -278,7 +275,7 @@ class GitHubOauthManager(BaseOauthManager):
             return user
         except Exception as e:
             logger.error(e)
-            logger.error('github oauth error.rsp:' + rsp)
+            logger.error(f'github oauth error.rsp:{rsp}')
             return None
 
 
@@ -306,8 +303,7 @@ class FaceBookOauthManager(BaseOauthManager):
             'redirect_uri': self.callback_url,  # + '&next_url=' + nexturl,
             'scope': 'email,public_profile'
         }
-        url = self.AUTH_URL + "?" + urllib.parse.urlencode(params)
-        return url
+        return f"{self.AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     def get_access_token_by_code(self, code):
         params = {
@@ -321,12 +317,11 @@ class FaceBookOauthManager(BaseOauthManager):
         rsp = self.do_post(self.TOKEN_URL, params)
 
         obj = json.loads(rsp)
-        if 'access_token' in obj:
-            token = str(obj['access_token'])
-            self.access_token = token
-            return self.access_token
-        else:
+        if 'access_token' not in obj:
             raise OAuthAccessTokenException(rsp)
+        token = str(obj['access_token'])
+        self.access_token = token
+        return self.access_token
 
     def get_oauth_userinfo(self):
         params = {
@@ -374,10 +369,10 @@ class QQOauthManager(BaseOauthManager):
         params = {
             'response_type': 'code',
             'client_id': self.client_id,
-            'redirect_uri': self.callback_url + '&next_url=' + nexturl,
+            'redirect_uri': f'{self.callback_url}&next_url={nexturl}',
         }
-        url = self.AUTH_URL + "?" + urllib.parse.urlencode(params)
-        return url
+
+        return f"{self.AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     def get_access_token_by_code(self, code):
         params = {
@@ -387,23 +382,20 @@ class QQOauthManager(BaseOauthManager):
             'code': code,
             'redirect_uri': self.callback_url
         }
-        rsp = self.do_get(self.TOKEN_URL, params)
-        if rsp:
-            d = urllib.parse.parse_qs(rsp)
-            if 'access_token' in d:
-                token = d['access_token']
-                self.access_token = token
-                return token
-        else:
+        if not (rsp := self.do_get(self.TOKEN_URL, params)):
             raise OAuthAccessTokenException(rsp)
+        d = urllib.parse.parse_qs(rsp)
+        if 'access_token' in d:
+            token = d['access_token']
+            self.access_token = token
+            return token
 
     def get_open_id(self):
         if self.is_access_token_set:
             params = {
                 'access_token': self.access_token
             }
-            rsp = self.do_get(self.OPEN_ID_URL, params)
-            if rsp:
+            if rsp := self.do_get(self.OPEN_ID_URL, params):
                 rsp = rsp.replace(
                     'callback(', '').replace(
                     ')', '').replace(
@@ -414,8 +406,7 @@ class QQOauthManager(BaseOauthManager):
                 return openid
 
     def get_oauth_userinfo(self):
-        openid = self.get_open_id()
-        if openid:
+        if openid := self.get_open_id():
             params = {
                 'access_token': self.access_token,
                 'oauth_consumer_key': self.client_id,
@@ -444,17 +435,13 @@ def get_oauth_apps():
         return []
     configtypes = [x.type for x in configs]
     applications = BaseOauthManager.__subclasses__()
-    apps = [x() for x in applications if x().ICON_NAME.lower() in configtypes]
-    return apps
+    return [x() for x in applications if x().ICON_NAME.lower() in configtypes]
 
 
 def get_manager_by_type(type):
-    applications = get_oauth_apps()
-    if applications:
-        finds = list(
-            filter(
-                lambda x: x.ICON_NAME.lower() == type.lower(),
-                applications))
-        if finds:
+    if applications := get_oauth_apps():
+        if finds := list(
+            filter(lambda x: x.ICON_NAME.lower() == type.lower(), applications)
+        ):
             return finds[0]
     return None

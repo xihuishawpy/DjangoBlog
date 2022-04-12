@@ -125,11 +125,8 @@ def load_sidebar(user, linktype):
     加载侧边栏
     :return:
     """
-    value = cache.get("sidebar" + linktype)
-    if value:
-        value['user'] = user
-        return value
-    else:
+    value = cache.get(f"sidebar{linktype}")
+    if not value:
         logger.info('load sidebar')
         from djangoblog.utils import get_blog_setting
         blogsetting = get_blog_setting()
@@ -145,16 +142,16 @@ def load_sidebar(user, linktype):
             Q(show_type=str(linktype)) | Q(show_type=LinkShowType.A))
         commment_list = Comment.objects.filter(is_enable=True).order_by(
             '-id')[:blogsetting.sidebar_comment_count]
-        # 标签云 计算字体大小
-        # 根据总数计算出平均值 大小为 (数目/平均值)*步长
-        increment = 5
         tags = Tag.objects.all()
         sidebar_tags = None
         if tags and len(tags) > 0:
             s = [t for t in [(t, t.get_article_count()) for t in tags] if t[1]]
-            count = sum([t[1] for t in s])
+            count = sum(t[1] for t in s)
             dd = 1 if (count == 0 or not len(tags)) else count / len(tags)
             import random
+            # 标签云 计算字体大小
+            # 根据总数计算出平均值 大小为 (数目/平均值)*步长
+            increment = 5
             sidebar_tags = list(
                 map(lambda x: (x[0], x[1], (x[1] / dd) * increment + 10), s))
             random.shuffle(sidebar_tags)
@@ -173,9 +170,9 @@ def load_sidebar(user, linktype):
             'sidebar_tags': sidebar_tags,
             'extra_sidebars': extra_sidebars
         }
-        cache.set("sidebar" + linktype, value, 60 * 60 * 60 * 3)
-        value['user'] = user
-        return value
+        cache.set(f"sidebar{linktype}", value, 60 * 60 * 60 * 3)
+    value['user'] = user
+    return value
 
 
 @register.inclusion_tag('blog/tags/article_meta_info.html')
@@ -284,24 +281,21 @@ def load_article_detail(article, isindex, user):
 @register.filter
 def gravatar_url(email, size=40):
     """获得gravatar头像"""
-    cachekey = 'gravatat/' + email
+    cachekey = f'gravatat/{email}'
     if cache.get(cachekey):
         return cache.get(cachekey)
-    else:
-        usermodels = OAuthUser.objects.filter(email=email)
-        if usermodels:
-            o = list(filter(lambda x: x.picture is not None, usermodels))
-            if o:
-                return o[0].picture
-        email = email.encode('utf-8')
+    if usermodels := OAuthUser.objects.filter(email=email):
+        if o := list(filter(lambda x: x.picture is not None, usermodels)):
+            return o[0].picture
+    email = email.encode('utf-8')
 
-        default = "https://resource.lylinux.net/image/2017/03/26/120117.jpg".encode(
-            'utf-8')
+    default = "https://resource.lylinux.net/image/2017/03/26/120117.jpg".encode(
+        'utf-8')
 
-        url = "https://www.gravatar.com/avatar/%s?%s" % (hashlib.md5(
-            email.lower()).hexdigest(), urllib.parse.urlencode({'d': default, 's': str(size)}))
-        cache.set(cachekey, url, 60 * 60 * 10)
-        return url
+    url = "https://www.gravatar.com/avatar/%s?%s" % (hashlib.md5(
+        email.lower()).hexdigest(), urllib.parse.urlencode({'d': default, 's': str(size)}))
+    cache.set(cachekey, url, 60 * 60 * 10)
+    return url
 
 
 @register.filter

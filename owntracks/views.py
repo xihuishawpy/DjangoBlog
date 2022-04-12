@@ -72,12 +72,11 @@ def convert_to_amap(locations):
     it = iter(locations)
 
     item = list(itertools.islice(it, 30))
+    key = '8440a376dfc9743d8924bf0ad141f28e'
+    api = 'http://restapi.amap.com/v3/assistant/coordinate/convert'
     while item:
-        datas = ';'.join(
-            set(map(lambda x: str(x.lon) + ',' + str(x.lat), item)))
+        datas = ';'.join(set(map(lambda x: f'{str(x.lon)},{str(x.lat)}', item)))
 
-        key = '8440a376dfc9743d8924bf0ad141f28e'
-        api = 'http://restapi.amap.com/v3/assistant/coordinate/convert'
         query = {
             'key': key,
             'locations': datas,
@@ -107,18 +106,14 @@ def get_datas(request):
     nextdate = querydate + datetime.timedelta(days=1)
     models = OwnTrackLog.objects.filter(
         created_time__range=(querydate, nextdate))
-    result = list()
+    result = []
     if models and len(models):
         for tid, item in groupby(
                 sorted(models, key=lambda k: k.tid), key=lambda k: k.tid):
 
-            d = dict()
-            d["name"] = tid
-            paths = list()
             locations = convert_to_amap(
                 sorted(item, key=lambda x: x.created_time))
-            for i in locations.split(';'):
-                paths.append(i.split(','))
-            d["path"] = paths
+            paths = [i.split(',') for i in locations.split(';')]
+            d = {"name": tid, "path": paths}
             result.append(d)
     return JsonResponse(result, safe=False)

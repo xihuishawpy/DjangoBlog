@@ -21,8 +21,7 @@ class ElasticSearchBackend(BaseSearchBackend):
 
     def _get_models(self, iterable):
         models = iterable if iterable and iterable[0] else Article.objects.all()
-        docs = self.manager.convert_to_doc(models)
-        return docs
+        return self.manager.convert_to_doc(models)
 
     def _create(self, models):
         self.manager.create_index()
@@ -35,7 +34,7 @@ class ElasticSearchBackend(BaseSearchBackend):
         return True
 
     def _rebuild(self, models):
-        models = models if models else Article.objects.all()
+        models = models or Article.objects.all()
         docs = self.manager.convert_to_doc(models)
         self.manager.update_docs(docs)
 
@@ -53,7 +52,7 @@ class ElasticSearchBackend(BaseSearchBackend):
 
     @log_query
     def search(self, query_string, **kwargs):
-        logger.info('search query_string:' + query_string)
+        logger.info(f'search query_string:{query_string}')
 
         start_offset = kwargs.get('start_offset')
         end_offset = kwargs.get('end_offset')
@@ -70,9 +69,9 @@ class ElasticSearchBackend(BaseSearchBackend):
         results = search.execute()
         hits = results['hits'].total
         raw_results = []
+        app_label = 'blog'
+        model_name = 'Article'
         for raw_result in results['hits']['hits']:
-            app_label = 'blog'
-            model_name = 'Article'
             additional_fields = {}
 
             result_class = SearchResult

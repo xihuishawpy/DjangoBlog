@@ -19,8 +19,7 @@ class ArticleListFilter(admin.SimpleListFilter):
             yield (author.id, _(author.username))
 
     def queryset(self, request, queryset):
-        id = self.value()
-        if id:
+        if id := self.value():
             return queryset.filter(author__id__exact=id)
         else:
             return queryset
@@ -99,12 +98,9 @@ class ArticlelAdmin(admin.ModelAdmin):
 
     def get_view_on_site_url(self, obj=None):
         if obj:
-            url = obj.get_full_url()
-            return url
-        else:
-            from djangoblog.utils import get_current_site
-            site = get_current_site().domain
-            return site
+            return obj.get_full_url()
+        from djangoblog.utils import get_current_site
+        return get_current_site().domain
 
 
 class TagAdmin(admin.ModelAdmin):

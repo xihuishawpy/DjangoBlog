@@ -24,9 +24,9 @@ class BlogUser(AbstractUser):
 
     def get_full_url(self):
         site = get_current_site().domain
-        url = "https://{site}{path}".format(site=site,
-                                            path=self.get_absolute_url())
-        return url
+        return "https://{site}{path}".format(
+            site=site, path=self.get_absolute_url()
+        )
 
     class Meta:
         ordering = ['-id']

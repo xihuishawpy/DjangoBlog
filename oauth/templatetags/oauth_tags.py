@@ -8,8 +8,7 @@ register = template.Library()
 
 @register.inclusion_tag('oauth/oauth_applications.html')
 def load_oauth_applications(request):
-    applications = get_oauth_apps()
-    if applications:
+    if applications := get_oauth_apps():
         baseurl = reverse('oauth:oauthlogin')
         path = request.get_full_path()
 
