@@ -36,21 +36,24 @@ class RegisterView(FormView):
     template_name = 'account/registration_form.html'
 
     def form_valid(self, form):
-        if form.is_valid():
-            user = form.save(False)
-            user.is_active = False
-            user.source = 'Register'
-            user.save(True)
-            site = get_current_site().domain
-            sign = get_sha256(get_sha256(settings.SECRET_KEY + str(user.id)))
+        if not form.is_valid():
+            return self.render_to_response({
+                'form': form
+            })
+        user = form.save(False)
+        user.is_active = False
+        user.source = 'Register'
+        user.save(True)
+        site = get_current_site().domain
+        sign = get_sha256(get_sha256(settings.SECRET_KEY + str(user.id)))
 
-            if settings.DEBUG:
-                site = '127.0.0.1:8000'
-            path = reverse('account:result')
-            url = "http://{site}{path}?type=validation&id={id}&sign={sign}".format(
-                site=site, path=path, id=user.id, sign=sign)
+        if settings.DEBUG:
+            site = '127.0.0.1:8000'
+        path = reverse('account:result')
+        url = "http://{site}{path}?type=validation&id={id}&sign={sign}".format(
+            site=site, path=path, id=user.id, sign=sign)
 
-            content = """
+        content = """
                             <p>请点击下面链接验证您的邮箱</p>
 
                             <a href="{url}" rel="bookmark">{url}</a>
@@ -60,20 +63,16 @@ class RegisterView(FormView):
                             如果上面链接无法打开，请将此链接复制至浏览器。
                             {url}
                             """.format(url=url)
-            send_email(
-                emailto=[
-                    user.email,
-                ],
-                title='验证您的电子邮箱',
-                content=content)
+        send_email(
+            emailto=[
+                user.email,
+            ],
+            title='验证您的电子邮箱',
+            content=content)
 
-            url = reverse('accounts:result') + \
-                  '?type=register&id=' + str(user.id)
-            return HttpResponseRedirect(url)
-        else:
-            return self.render_to_response({
-                'form': form
-            })
+        url = reverse('accounts:result') + \
+              '?type=register&id=' + str(user.id)
+        return HttpResponseRedirect(url)
 
 
 class LogoutView(RedirectView):
@@ -114,19 +113,17 @@ class LoginView(FormView):
     def form_valid(self, form):
         form = AuthenticationForm(data=self.request.POST, request=self.request)
 
-        if form.is_valid():
-            delete_sidebar_cache()
-            logger.info(self.redirect_field_name)
-
-            auth.login(self.request, form.get_user())
-            if self.request.POST.get("remember"):
-                self.request.session.set_expiry(self.login_ttl)
-            return super(LoginView, self).form_valid(form)
-            # return HttpResponseRedirect('/')
-        else:
+        if not form.is_valid():
             return self.render_to_response({
                 'form': form
             })
+        delete_sidebar_cache()
+        logger.info(self.redirect_field_name)
+
+        auth.login(self.request, form.get_user())
+        if self.request.POST.get("remember"):
+            self.request.session.set_expiry(self.login_ttl)
+        return super(LoginView, self).form_valid(form)
 
     def get_success_url(self):
 
@@ -176,13 +173,12 @@ class ForgetPasswordView(FormView):
     template_name = 'account/forget_password.html'
 
     def form_valid(self, form):
-        if form.is_valid():
-            blog_user = BlogUser.objects.filter(email=form.cleaned_data.get("email")).get()
-            blog_user.password = make_password(form.cleaned_data["new_password2"])
-            blog_user.save()
-            return HttpResponseRedirect('/login/')
-        else:
+        if not form.is_valid():
             return self.render_to_response({'form': form})
+        blog_user = BlogUser.objects.filter(email=form.cleaned_data.get("email")).get()
+        blog_user.password = make_password(form.cleaned_data["new_password2"])
+        blog_user.save()
+        return HttpResponseRedirect('/login/')
 
 
 class ForgetPasswordEmailCode(View):

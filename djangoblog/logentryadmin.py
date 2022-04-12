@@ -82,11 +82,11 @@ class LogEntryAdmin(admin.ModelAdmin):
             # try returning an actual link instead of object repr string
             try:
                 url = reverse(
-                    'admin:{}_{}_change'.format(content_type.app_label,
-                                                content_type.model),
-                    args=[obj.object_id]
+                    f'admin:{content_type.app_label}_{content_type.model}_change',
+                    args=[obj.object_id],
                 )
-                object_link = '<a href="{}">{}</a>'.format(url, object_link)
+
+                object_link = f'<a href="{url}">{object_link}</a>'
             except NoReverseMatch:
                 pass
         return mark_safe(object_link)
@@ -100,11 +100,11 @@ class LogEntryAdmin(admin.ModelAdmin):
         try:
             # try returning an actual link instead of object repr string
             url = reverse(
-                'admin:{}_{}_change'.format(content_type.app_label,
-                                            content_type.model),
-                args=[obj.user.pk]
+                f'admin:{content_type.app_label}_{content_type.model}_change',
+                args=[obj.user.pk],
             )
-            user_link = '<a href="{}">{}</a>'.format(url, user_link)
+
+            user_link = f'<a href="{url}">{user_link}</a>'
         except NoReverseMatch:
             pass
         return mark_safe(user_link)

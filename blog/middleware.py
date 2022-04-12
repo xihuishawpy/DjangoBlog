@@ -37,6 +37,6 @@ class OnlineMiddleware(object):
                 response.content = response.content.replace(
                     b'<!!LOAD_TIMES!!>', str.encode(str(cast_time)[:5]))
             except Exception as e:
-                logger.error("Error OnlineMiddleware: %s" % e)
+                logger.error(f"Error OnlineMiddleware: {e}")
 
         return response

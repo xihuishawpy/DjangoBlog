@@ -7,9 +7,7 @@ from elasticsearch_dsl.connections import connections
 
 from blog.models import Article
 
-ELASTICSEARCH_ENABLED = hasattr(settings, 'ELASTICSEARCH_DSL')
-
-if ELASTICSEARCH_ENABLED:
+if ELASTICSEARCH_ENABLED := hasattr(settings, 'ELASTICSEARCH_DSL'):
     connections.create_connection(
         hosts=[settings.ELASTICSEARCH_DSL['default']['hosts']])
     from elasticsearch import Elasticsearch
@@ -203,7 +201,7 @@ class ArticleDocumentManager():
 
     def rebuild(self, articles=None):
         ArticleDocument.init()
-        articles = articles if articles else Article.objects.all()
+        articles = articles or Article.objects.all()
         docs = self.convert_to_doc(articles)
         for doc in docs:
             doc.save()

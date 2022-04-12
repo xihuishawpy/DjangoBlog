@@ -68,8 +68,8 @@ class ArticleTest(TestCase):
 
         for i in range(20):
             article = Article()
-            article.title = "nicetitle" + str(i)
-            article.body = "nicetitle" + str(i)
+            article.title = f"nicetitle{str(i)}"
+            article.body = f"nicetitle{str(i)}"
             article.author = user
             article.category = category
             article.type = 'a'
@@ -182,8 +182,7 @@ class ArticleTest(TestCase):
             imgfile = SimpleUploadedFile(
                 'python.png', file.read(), content_type='image/jpg')
             form_data = {'python.png': imgfile}
-            rsp = self.client.post(
-                '/upload?sign=' + sign, form_data, follow=True)
+            rsp = self.client.post(f'/upload?sign={sign}', form_data, follow=True)
             self.assertEqual(rsp.status_code, 200)
         os.remove(imagepath)
         from djangoblog.utils import save_user_avatar, send_email

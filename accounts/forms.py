@@ -102,11 +102,10 @@ class ForgetPasswordForm(forms.Form):
 
     def clean_code(self):
         code = self.cleaned_data.get("code")
-        error = utils.verify(
+        if error := utils.verify(
             email=self.cleaned_data.get("email"),
             code=code,
-        )
-        if error:
+        ):
             raise ValidationError(error)
         return code
 

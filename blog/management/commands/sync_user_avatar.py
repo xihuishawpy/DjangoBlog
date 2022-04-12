@@ -14,8 +14,7 @@ class Command(BaseCommand):
         for u in users:
             self.stdout.write('开始同步:{id}'.format(id=u.nikename))
             url = u.picture
-            url = save_user_avatar(url)
-            if url:
+            if url := save_user_avatar(url):
                 self.stdout.write(
                     '结束同步:{id}.url:{url}'.format(
                         id=u.nikename, url=url))
